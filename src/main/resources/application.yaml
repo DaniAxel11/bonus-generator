@@ -1,10 +1,11 @@
 spring:
   application:
     name: bonus-generator
+
   datasource:
-    url: jdbc:postgresql://aws-1-us-east-2.pooler.supabase.com:5432/postgres
-    username: postgres.djtjwxwcbephzyusuqdh
-    password: Lobito20$chiquilin20$
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -16,14 +17,10 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-  sql:
-    init:
-      mode: always
-
 ai:
   api:
-    url: https://api.openai.com/v1/completions
-    key: tu_api_key_aqui
+    url: ${AI_API_URL}
+    key: ${AI_API_KEY}
 
 server:
-  port: 8080
+  port: ${PORT:8080}
