@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bonus-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bonus-generator
+  template:
+    metadata:
+      labels:
+        app: bonus-generator
+    spec:
+      containers:
+      - name: bonus-generator
+        image: bonus-generator:1.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080

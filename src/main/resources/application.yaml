@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: bonus-generator
+  datasource:
+    url: jdbc:postgresql://aws-1-us-east-2.pooler.supabase.com:5432/postgres
+    username: postgres.djtjwxwcbephzyusuqdh
+    password: Lobito20$chiquilin20$
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  sql:
+    init:
+      mode: always
+
+ai:
+  api:
+    url: https://api.openai.com/v1/completions
+    key: tu_api_key_aqui
+
+server:
+  port: 8080
