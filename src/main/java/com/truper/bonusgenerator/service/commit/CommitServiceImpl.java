@@ -6,7 +6,7 @@ import com.truper.bonusgenerator.model.entity.Commit;
 import com.truper.bonusgenerator.repository.CommitRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.grammars.hql.HqlParser;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
@@ -18,15 +18,18 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CommitServiceImpl implements CommitService {
 
     private final CommitRepository commitRepository;
     private final CommitMapper commitMapper;
 
     @Override
-    @Transactional()
+    @Transactional
     public CommitDto createCommit(CommitDto commit) {
+        log.info("Commit dto: {}", commit);
         Commit commitEntity = commitMapper.toEntity(commit);
+        log.info("Commit entity: {}", commitEntity);
         return commitMapper.toDto(commitRepository.save(commitEntity));
     }
 
