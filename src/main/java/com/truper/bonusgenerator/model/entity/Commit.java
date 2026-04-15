@@ -34,8 +34,7 @@ public class Commit {
     @Column(name = "message", length = Integer.MAX_VALUE)
     private String message;
 
-    @ColumnDefault("now()")
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Date createdAt;
 
 
