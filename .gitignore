@@ -58,3 +58,6 @@ build/
 hs_err_pid*
 replay_pid*
 >>>>>>> c99c673a94a4c1a44ec906b7f5c5ba103f76ee50
+
+# Propiedades docker
+*.env

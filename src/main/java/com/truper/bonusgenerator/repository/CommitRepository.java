@@ -6,9 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Date;
 import java.util.List;
 
-public interface CommitRepository extends JpaRepository<Commit, Integer> {
+public interface CommitRepository extends JpaRepository<Commit, Long> {
 
     Commit save(Commit commit);
 
     List<Commit> findByCreatedAtBetween(Date createdAtAfter, Date createdAtBefore);
+
+    List<Commit> findByCreatedAtBetweenOrderByCreatedAtAsc(Date createdAtAfter, Date createdAtBefore);
 }

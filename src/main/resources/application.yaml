@@ -21,6 +21,12 @@ ai:
   api:
     url: ${AI_API_URL}
     key: ${AI_API_KEY}
+    model: ${AI_MODEL:gpt-5.1-mini}
+
+jobs:
+  commit-analysis:
+    cron: ${COMMIT_ANALYSIS_CRON:0 0 8 * * MON}
+    zone: ${COMMIT_ANALYSIS_ZONE:America/Mexico_City}
 
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8084}

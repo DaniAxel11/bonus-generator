@@ -8,5 +8,5 @@ spec:
     app: bonus-generator
   ports:
     - port: 80
-      targetPort: 8083
+      targetPort: 8084
       nodePort: 30007

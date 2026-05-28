@@ -2,19 +2,22 @@ package com.truper.bonusgenerator.service.commit;
 
 import com.truper.bonusgenerator.model.dto.CommitDto;
 import com.truper.bonusgenerator.model.dto.mapper.CommitMapper;
+import com.truper.bonusgenerator.model.dto.response.CommitMonthWeeksResponse;
+import com.truper.bonusgenerator.model.dto.response.CommitWeekResponse;
 import com.truper.bonusgenerator.model.entity.Commit;
 import com.truper.bonusgenerator.repository.CommitRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,73 +30,114 @@ public class CommitServiceImpl implements CommitService {
     @Override
     @Transactional
     public CommitDto createCommit(CommitDto commit) {
-        log.info("Commit dto: {}", commit);
         Commit commitEntity = commitMapper.toEntity(commit);
-        log.info("Commit entity: {}", commitEntity);
         return commitMapper.toDto(commitRepository.save(commitEntity));
     }
 
     @Override
     public List<CommitDto> getCommitsByRangeDate() {
-//        List<Commit> commits = commitRepository.findByCreatedAtBetween(
-//                getReportRangeForLastDayOfMonth().get("start").atStartOfDay(),
-//                getReportRangeForLastDayOfMonth().get("end").atTime(23, 59, 59)
-//        );
-
-//        return commits.stream()
-//                .map(commitMapper::toDto)
-//                .toList();
         return null;
     }
 
-    public Map<String, LocalDate> getReportRangeForLastDayOfMonth() {
-        LocalDate lastDay = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
-        Map<String, LocalDate> range = Map.of();
-        DayOfWeek day = getLastDayOfMonth();
+    @Override
+    public CommitMonthWeeksResponse getCurrentMonthCommitsByWeek() {
+        WeekRange lastCompleteWeek = getLastCompleteWeek(LocalDate.now());
+        YearMonth reportMonth = getReportMonth(lastCompleteWeek);
 
-        switch (day) {
-            case MONDAY:
-                range = calculateRange(lastDay, lastDay.plusDays(4));
-                break;
-            case TUESDAY:
-                range = calculateRange(lastDay.minusDays(1), lastDay.plusDays(3));
-                break;
-            case WEDNESDAY:
-                range = calculateRange(lastDay.minusDays(2), lastDay.plusDays(2));
-                break;
-            case THURSDAY:
-                range = calculateRange(lastDay.minusDays(3), lastDay.plusDays(3));
-                break;
-            case FRIDAY:
-                range = calculateRange(lastDay.minusDays(4), lastDay.plusDays(2));
-                break;
-            case SATURDAY:
-                range = calculateRange(lastDay.minusDays(5), lastDay.plusDays(1));
-                break;
-            case SUNDAY:
-                range = calculateRange(lastDay.minusDays(6), lastDay);
-                break;
+        Date startDate = toStartDate(lastCompleteWeek.startDate());
+        Date endDate = toEndDate(lastCompleteWeek.endDate());
+        List<Commit> commits = commitRepository.findByCreatedAtBetweenOrderByCreatedAtAsc(startDate, endDate);
+        List<CommitDto> weekCommits = commits.stream()
+                .map(commitMapper::toDto)
+                .toList();
+
+        CommitWeekResponse week = new CommitWeekResponse(
+                getWeekNumber(reportMonth, lastCompleteWeek),
+                lastCompleteWeek.startDate(),
+                lastCompleteWeek.endDate(),
+                weekCommits.size(),
+                weekCommits
+        );
+
+        return new CommitMonthWeeksResponse(
+                reportMonth.getYear(),
+                reportMonth.getMonthValue(),
+                1,
+                List.of(week)
+        );
+    }
+
+    private WeekRange getLastCompleteWeek(LocalDate currentDate) {
+        LocalDate currentWeekStart = getStartOfWeek(currentDate);
+        LocalDate lastCompleteWeekStart = currentWeekStart.minusWeeks(1);
+        return new WeekRange(lastCompleteWeekStart, lastCompleteWeekStart.plusDays(6));
+    }
+
+    private int getWeekNumber(YearMonth month, WeekRange weekRange) {
+        List<WeekRange> weekRanges = getWeeksAssignedToMonth(month);
+        for (int i = 0; i < weekRanges.size(); i++) {
+            if (weekRanges.get(i).startDate().equals(weekRange.startDate())) {
+                return i + 1;
+            }
+        }
+        return 1;
+    }
+
+    private YearMonth getReportMonth(WeekRange weekRange) {
+        YearMonth startMonth = YearMonth.from(weekRange.startDate());
+        YearMonth endMonth = YearMonth.from(weekRange.endDate());
+
+        if (startMonth.equals(endMonth)) {
+            return startMonth;
         }
 
-        return range;
-
+        int startMonthDays = countDaysInMonth(weekRange.startDate(), weekRange.endDate(), startMonth);
+        int endMonthDays = countDaysInMonth(weekRange.startDate(), weekRange.endDate(), endMonth);
+        return startMonthDays >= endMonthDays ? startMonth : endMonth;
     }
 
-    private static @NonNull Map<String, LocalDate> calculateRange(LocalDate lastMonday, LocalDate nextFriday) {
-        Map<String, LocalDate> range;
-        range = Map.of(
-                "start", lastMonday,
-                "end", nextFriday
-        );
-        return range;
+    private List<WeekRange> getWeeksAssignedToMonth(YearMonth month) {
+        LocalDate firstDayOfMonth = month.atDay(1);
+        LocalDate lastDayOfMonth = month.atEndOfMonth();
+        LocalDate currentWeekStart = getStartOfWeek(firstDayOfMonth);
+        List<WeekRange> weekRanges = new ArrayList<>();
+
+        while (!currentWeekStart.isAfter(lastDayOfMonth)) {
+            LocalDate currentWeekEnd = currentWeekStart.plusDays(6);
+            if (countDaysInMonth(currentWeekStart, currentWeekEnd, month) >= 4) {
+                weekRanges.add(new WeekRange(currentWeekStart, currentWeekEnd));
+            }
+            currentWeekStart = currentWeekStart.plusWeeks(1);
+        }
+
+        return weekRanges;
     }
 
-    private DayOfWeek getLastDayOfMonth() {
-        LocalDate now = LocalDate.now();
-        LocalDate lastDay = now.with(TemporalAdjusters.lastDayOfMonth());
-
-        return lastDay.getDayOfWeek();
+    private int countDaysInMonth(LocalDate startDate, LocalDate endDate, YearMonth month) {
+        int daysInMonth = 0;
+        LocalDate currentDate = startDate;
+        while (!currentDate.isAfter(endDate)) {
+            if (YearMonth.from(currentDate).equals(month)) {
+                daysInMonth++;
+            }
+            currentDate = currentDate.plusDays(1);
+        }
+        return daysInMonth;
     }
 
+    private LocalDate getStartOfWeek(LocalDate date) {
+        int daysFromSunday = date.getDayOfWeek().getValue() % DayOfWeek.SUNDAY.getValue();
+        return date.minusDays(daysFromSunday);
+    }
 
+    private Date toStartDate(LocalDate date) {
+        return Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    private Date toEndDate(LocalDate date) {
+        return Date.from(date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).minusNanos(1).toInstant());
+    }
+
+    private record WeekRange(LocalDate startDate, LocalDate endDate) {
+    }
 }
