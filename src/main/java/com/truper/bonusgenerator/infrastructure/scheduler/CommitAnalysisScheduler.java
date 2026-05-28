@@ -3,6 +3,7 @@ package com.truper.bonusgenerator.infrastructure.scheduler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.truper.bonusgenerator.infrastructure.client.AiClient;
+import com.truper.bonusgenerator.infrastructure.client.AiClient.AiAnalysisResponse;
 import com.truper.bonusgenerator.model.dto.CommitDto;
 import com.truper.bonusgenerator.model.dto.response.CommitMonthWeeksResponse;
 import com.truper.bonusgenerator.service.commit.CommitService;
@@ -28,9 +29,16 @@ public class CommitAnalysisScheduler {
 
         CommitMonthWeeksResponse commitsByWeek = commitService.getCurrentMonthCommitsByWeek();
         String commitsJson = toJson(toAiPayload(commitsByWeek));
-        List<String> analysis = aiClient.generarAnalisisCommits(commitsJson);
+        AiAnalysisResponse response = aiClient.generarAnalisisCommitsConMetricas(commitsJson);
 
-        log.info("Analisis automatico de commits generado: {}", analysis);
+        log.info("Analisis automatico de commits generado: {}", response.analysis());
+        log.info(
+                "Metricas IA. promptTokens={}, responseTokens={}, totalTokens={}, responseTimeMs={}",
+                response.usage().promptTokenCount(),
+                response.usage().candidatesTokenCount(),
+                response.usage().totalTokenCount(),
+                response.usage().responseTimeMs()
+        );
     }
 
     private AiCommitAnalysisPayload toAiPayload(CommitMonthWeeksResponse commitsByWeek) {

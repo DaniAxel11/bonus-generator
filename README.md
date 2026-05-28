@@ -35,9 +35,9 @@ La aplicacion utiliza variables de entorno para configurar la base de datos, el 
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/bonus_generator
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=postgres
-AI_API_URL=https://api.openai.com/v1/responses
+AI_API_URL=https://generativelanguage.googleapis.com/v1beta
 AI_API_KEY=your-api-key
-AI_MODEL=gpt-5.1-mini
+AI_MODEL=gemini-2.0-flash
 PORT=8084
 COMMIT_ANALYSIS_CRON=0 0 8 * * MON
 COMMIT_ANALYSIS_ZONE=America/Mexico_City
@@ -45,7 +45,7 @@ COMMIT_ANALYSIS_ZONE=America/Mexico_City
 
 Para Docker local, el archivo de variables que se esta usando es `enviroment.env`.
 
-El cliente de IA usa la API de OpenAI Responses. La API key se envia como `Authorization: Bearer ${AI_API_KEY}` y el modelo se toma de `AI_MODEL`.
+El cliente de IA usa Gemini API `generateContent`. La API key se envia como `x-goog-api-key: ${AI_API_KEY}` y el modelo se toma de `AI_MODEL`.
 
 ## Automatizacion
 

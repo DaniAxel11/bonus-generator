@@ -19,9 +19,9 @@ spring:
 
 ai:
   api:
-    url: ${AI_API_URL}
+    url: ${AI_API_URL:https://generativelanguage.googleapis.com/v1beta}
     key: ${AI_API_KEY}
-    model: ${AI_MODEL:gpt-5.1-mini}
+    model: ${AI_MODEL:gemini-2.0-flash}
 
 jobs:
   commit-analysis:
