@@ -3,6 +3,7 @@ package com.truper.bonusgenerator.infrastructure.scheduler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.truper.bonusgenerator.infrastructure.client.AiClient;
+import com.truper.bonusgenerator.model.dto.CommitDto;
 import com.truper.bonusgenerator.model.dto.response.CommitMonthWeeksResponse;
 import com.truper.bonusgenerator.service.commit.CommitService;
 import lombok.RequiredArgsConstructor;
@@ -26,17 +27,36 @@ public class CommitAnalysisScheduler {
         log.info("Iniciando analisis automatico de commits de la ultima semana completa");
 
         CommitMonthWeeksResponse commitsByWeek = commitService.getCurrentMonthCommitsByWeek();
-        String commitsJson = toJson(commitsByWeek);
+        String commitsJson = toJson(toAiPayload(commitsByWeek));
         List<String> analysis = aiClient.generarAnalisisCommits(commitsJson);
 
         log.info("Analisis automatico de commits generado: {}", analysis);
     }
 
-    private String toJson(CommitMonthWeeksResponse commitsByWeek) {
+    private AiCommitAnalysisPayload toAiPayload(CommitMonthWeeksResponse commitsByWeek) {
+        List<AiCommitPayload> commits = commitsByWeek.getWeeks().stream()
+                .flatMap(week -> week.getCommits().stream())
+                .map(this::toAiCommitPayload)
+                .toList();
+
+        return new AiCommitAnalysisPayload(commits);
+    }
+
+    private AiCommitPayload toAiCommitPayload(CommitDto commit) {
+        return new AiCommitPayload(commit.getRepo(), commit.getMessage());
+    }
+
+    private String toJson(AiCommitAnalysisPayload payload) {
         try {
-            return objectMapper.writeValueAsString(commitsByWeek);
+            return objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("No fue posible serializar los commits para la IA", exception);
         }
+    }
+
+    private record AiCommitAnalysisPayload(List<AiCommitPayload> commits) {
+    }
+
+    private record AiCommitPayload(String repo, String message) {
     }
 }
