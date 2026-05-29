@@ -35,17 +35,32 @@ La aplicacion utiliza variables de entorno para configurar la base de datos, el 
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/bonus_generator
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=postgres
+
 AI_API_URL=https://generativelanguage.googleapis.com/v1beta
 AI_API_KEY=your-api-key
-AI_MODEL=gemini-2.0-flash
+AI_MODEL=gemini-2.5-flash
+AI_FALLBACK_MODEL=gemini-2.5-flash-lite
+
 PORT=8084
+
 COMMIT_ANALYSIS_CRON=0 0 8 * * MON
 COMMIT_ANALYSIS_ZONE=America/Mexico_City
+
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM=your-email@gmail.com
+MAIL_TO=recipient@example.com
+MAIL_SMTP_AUTH=true
+MAIL_SMTP_STARTTLS_ENABLE=true
+MAIL_SMTP_SSL_TRUST=smtp.gmail.com
+MAIL_DEBUG=false
 ```
 
 Para Docker local, el archivo de variables que se esta usando es `enviroment.env`.
 
-El cliente de IA usa Gemini API `generateContent`. La API key se envia como `x-goog-api-key: ${AI_API_KEY}` y el modelo se toma de `AI_MODEL`.
+El cliente de IA usa Gemini API `generateContent`. La API key se envia como `x-goog-api-key: ${AI_API_KEY}` y el modelo se toma de `AI_MODEL`. Para proyectos nuevos se recomienda usar `gemini-2.5-flash` o `gemini-2.5-flash-lite`; si Gemini responde `429` para el modelo principal, la aplicacion intenta una vez con `AI_FALLBACK_MODEL`.
 
 ## Automatizacion
 
@@ -58,7 +73,30 @@ COMMIT_ANALYSIS_CRON=0 0 8 * * MON
 COMMIT_ANALYSIS_ZONE=America/Mexico_City
 ```
 
-El job consulta la ultima semana completa de commits, serializa la respuesta y llama al cliente de IA para obtener un arreglo con 3 strings.
+El job consulta la ultima semana completa de commits, serializa la respuesta, llama al cliente de IA para obtener un arreglo con 3 strings y envia el resultado por correo electronico.
+
+Si Gemini responde `429 Too Many Requests`, la aplicacion regresa un error controlado indicando que se alcanzo un limite de cuota o frecuencia. Revisa el uso y limites del proyecto en Google AI Studio.
+
+## Correo Electronico
+
+La aplicacion usa Spring Mail para enviar el resultado del analisis automatico. Configura las variables SMTP en `enviroment.env`.
+
+El reporte de analisis se envia como correo HTML con secciones diferenciadas por color: impacto positivo, problema detectado, acciones realizadas y metricas de IA.
+
+Para Gmail se requiere una app password, no la contrasena normal de la cuenta:
+
+```bash
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM=your-email@gmail.com
+MAIL_TO=recipient@example.com
+MAIL_SMTP_AUTH=true
+MAIL_SMTP_STARTTLS_ENABLE=true
+MAIL_SMTP_SSL_TRUST=smtp.gmail.com
+MAIL_DEBUG=false
+```
 
 ## Ejecucion local
 
@@ -138,9 +176,20 @@ El `Deployment` expone el contenedor en el puerto `8084` y el `Service` redirige
 
 - `POST /v1/report/commits/insert-commit`: registra un commit en base de datos.
 - `GET /v1/report/commits/current-month/weeks`: consulta los commits de la ultima semana completa.
+- `POST /v1/report/commits/analysis/manual`: genera manualmente el analisis de commits por rango de fechas, envia correo y regresa metricas de IA.
+- `POST /v1/report/email/test`: envia un correo simple de prueba para validar la configuracion SMTP.
 - `GET /actuator/health`: health check provisto por Spring Boot Actuator.
 
 El endpoint semanal calcula semanas completas de domingo a sabado y regresa la ultima semana cerrada, no la semana en curso. Por ejemplo, si se consulta el `2026-05-28`, regresa el rango `2026-05-17` a `2026-05-23`; si se consulta el lunes `2026-06-01`, regresa el rango `2026-05-24` a `2026-05-30`.
+
+Ejemplo para ejecutar el analisis manual:
+
+```json
+{
+  "startDate": "2026-05-17",
+  "endDate": "2026-05-23"
+}
+```
 
 La documentacion OpenAPI queda disponible mediante Springdoc cuando la aplicacion esta en ejecucion:
 

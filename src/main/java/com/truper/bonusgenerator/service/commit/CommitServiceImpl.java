@@ -44,12 +44,7 @@ public class CommitServiceImpl implements CommitService {
         WeekRange lastCompleteWeek = getLastCompleteWeek(LocalDate.now());
         YearMonth reportMonth = getReportMonth(lastCompleteWeek);
 
-        Date startDate = toStartDate(lastCompleteWeek.startDate());
-        Date endDate = toEndDate(lastCompleteWeek.endDate());
-        List<Commit> commits = commitRepository.findByCreatedAtBetweenOrderByCreatedAtAsc(startDate, endDate);
-        List<CommitDto> weekCommits = commits.stream()
-                .map(commitMapper::toDto)
-                .toList();
+        List<CommitDto> weekCommits = getCommitsByDateRange(lastCompleteWeek.startDate(), lastCompleteWeek.endDate());
 
         CommitWeekResponse week = new CommitWeekResponse(
                 getWeekNumber(reportMonth, lastCompleteWeek),
@@ -65,6 +60,16 @@ public class CommitServiceImpl implements CommitService {
                 1,
                 List.of(week)
         );
+    }
+
+    @Override
+    public List<CommitDto> getCommitsByDateRange(LocalDate startDate, LocalDate endDate) {
+        Date start = toStartDate(startDate);
+        Date end = toEndDate(endDate);
+        return commitRepository.findByCreatedAtBetweenOrderByCreatedAtAsc(start, end)
+                .stream()
+                .map(commitMapper::toDto)
+                .toList();
     }
 
     private WeekRange getLastCompleteWeek(LocalDate currentDate) {

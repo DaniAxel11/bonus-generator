@@ -3,6 +3,7 @@ package com.truper.bonusgenerator.service.commit;
 import com.truper.bonusgenerator.model.dto.CommitDto;
 import com.truper.bonusgenerator.model.dto.response.CommitMonthWeeksResponse;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface CommitService {
@@ -12,4 +13,6 @@ public interface CommitService {
     List<CommitDto> getCommitsByRangeDate();
 
     CommitMonthWeeksResponse getCurrentMonthCommitsByWeek();
+
+    List<CommitDto> getCommitsByDateRange(LocalDate startDate, LocalDate endDate);
 }

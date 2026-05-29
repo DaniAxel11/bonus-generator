@@ -2,6 +2,24 @@ spring:
   application:
     name: bonus-generator
 
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:5000}
+          timeout: ${MAIL_TIMEOUT:5000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+          ssl:
+            trust: ${MAIL_SMTP_SSL_TRUST:smtp.gmail.com}
+      debug: ${MAIL_DEBUG:false}
+
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -21,12 +39,17 @@ ai:
   api:
     url: ${AI_API_URL:https://generativelanguage.googleapis.com/v1beta}
     key: ${AI_API_KEY}
-    model: ${AI_MODEL:gemini-2.0-flash}
+    model: ${AI_MODEL:gemini-2.5-flash}
+    fallback-model: ${AI_FALLBACK_MODEL:gemini-2.5-flash-lite}
 
 jobs:
   commit-analysis:
     cron: ${COMMIT_ANALYSIS_CRON:0 0 8 * * MON}
     zone: ${COMMIT_ANALYSIS_ZONE:America/Mexico_City}
+
+mail:
+  from: ${MAIL_FROM}
+  to: ${MAIL_TO}
 
 server:
   port: ${PORT:8084}

@@ -1,8 +1,12 @@
 package com.truper.bonusgenerator.controller;
 
 import com.truper.bonusgenerator.model.dto.CommitDto;
+import com.truper.bonusgenerator.model.dto.request.CommitAnalysisRequest;
+import com.truper.bonusgenerator.model.dto.response.CommitAnalysisResponse;
 import com.truper.bonusgenerator.model.dto.response.CommitMonthWeeksResponse;
+import com.truper.bonusgenerator.service.analysis.CommitAnalysisService;
 import com.truper.bonusgenerator.service.commit.CommitService;
+import com.truper.bonusgenerator.service.email.EmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class CommitController {
 
     private final CommitService commitService;
+    private final CommitAnalysisService commitAnalysisService;
+    private final EmailService emailService;
 
     @PostMapping("/commits/insert-commit")
     @Operation(
@@ -38,5 +44,31 @@ public class CommitController {
     )
     public ResponseEntity<CommitMonthWeeksResponse> getCurrentMonthCommitsByWeek() {
         return ResponseEntity.ok(commitService.getCurrentMonthCommitsByWeek());
+    }
+
+    @PostMapping("/commits/analysis/manual")
+    @Operation(
+            summary = "Genera reporte manual de commits",
+            description = "Recibe un rango de fechas, consulta commits, genera analisis con IA y envia el resultado por correo"
+    )
+    public ResponseEntity<CommitAnalysisResponse> generateManualCommitAnalysis(
+            @RequestBody CommitAnalysisRequest request
+    ) {
+        CommitAnalysisResponse response = commitAnalysisService.analyzeByDateRange(
+                request.getStartDate(),
+                request.getEndDate()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/email/test")
+    @Operation(
+            summary = "Envia correo de prueba",
+            description = "Valida la configuracion SMTP enviando un correo simple al destinatario configurado"
+    )
+    public ResponseEntity<String> sendTestEmail() {
+        emailService.sendTestEmail();
+        return ResponseEntity.ok("Correo de prueba enviado correctamente");
     }
 }

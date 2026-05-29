@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,9 @@ public class AiClient {
     @Value("${ai.api.model}")
     private String model;
 
+    @Value("${ai.api.fallback-model:}")
+    private String fallbackModel;
+
     public String generarTexto(String prompt) {
         return generarTextoConMetricas(prompt).text();
     }
@@ -49,23 +53,27 @@ public class AiClient {
         );
 
         long startTime = System.nanoTime();
-        JsonNode response = webClientBuilder.build()
-                .post()
-                .uri("%s/models/%s:generateContent".formatted(aiUrl, model))
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("x-goog-api-key", apiKey)
-                .bodyValue(request)
-                .retrieve()
-                .bodyToMono(JsonNode.class)
-                .block();
-        long responseTimeMs = (System.nanoTime() - startTime) / 1_000_000;
+        AiRawResponse rawResponse;
+        try {
+            rawResponse = sendRequest(model, request, startTime);
+        } catch (WebClientResponseException.TooManyRequests exception) {
+            rawResponse = retryWithFallbackModel(request, startTime, exception);
+        } catch (WebClientResponseException exception) {
+            throw new IllegalStateException(
+                    "Gemini rechazo la solicitud. status=%s, body=%s".formatted(
+                            exception.getStatusCode(),
+                            exception.getResponseBodyAsString()
+                    ),
+                    exception
+            );
+        }
 
-        AiUsage usage = extractUsage(response, responseTimeMs);
-        String text = extractOutputText(response);
+        AiUsage usage = extractUsage(rawResponse.response(), rawResponse.responseTimeMs());
+        String text = extractOutputText(rawResponse.response());
 
         log.info(
                 "Respuesta IA recibida. modelo={}, promptTokens={}, responseTokens={}, totalTokens={}, responseTimeMs={}",
-                model,
+                rawResponse.model(),
                 usage.promptTokenCount(),
                 usage.candidatesTokenCount(),
                 usage.totalTokenCount(),
@@ -73,6 +81,56 @@ public class AiClient {
         );
 
         return new AiTextResponse(text, usage);
+    }
+
+    private AiRawResponse sendRequest(String requestModel, Map<String, Object> request, long startTime) {
+        String responseBody = webClientBuilder.build()
+                .post()
+                .uri("%s/models/%s:generateContent".formatted(aiUrl, requestModel))
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("x-goog-api-key", apiKey)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        long responseTimeMs = (System.nanoTime() - startTime) / 1_000_000;
+        return new AiRawResponse(requestModel, parseResponseBody(responseBody), responseTimeMs);
+    }
+
+    private AiRawResponse retryWithFallbackModel(
+            Map<String, Object> request,
+            long startTime,
+            WebClientResponseException.TooManyRequests originalException
+    ) {
+        if (fallbackModel == null || fallbackModel.isBlank() || fallbackModel.equals(model)) {
+            throw toRateLimitException(originalException, model);
+        }
+
+        log.warn(
+                "Gemini regreso 429 para modelo {}. Reintentando con fallbackModel={}",
+                model,
+                fallbackModel
+        );
+
+        try {
+            return sendRequest(fallbackModel, request, startTime);
+        } catch (WebClientResponseException.TooManyRequests fallbackException) {
+            throw toRateLimitException(fallbackException, fallbackModel);
+        }
+    }
+
+    private AiRateLimitException toRateLimitException(
+            WebClientResponseException.TooManyRequests exception,
+            String requestModel
+    ) {
+        return new AiRateLimitException(
+                "Gemini rechazo la solicitud por limite de cuota o frecuencia. Espera unos minutos o revisa los limites del proyecto en Google AI Studio.",
+                exception.getHeaders().getFirst("Retry-After"),
+                exception.getResponseBodyAsString(),
+                requestModel,
+                exception
+        );
     }
 
     public List<String> generarAnalisisCommits(String commitsJson) {
@@ -143,6 +201,14 @@ public class AiClient {
         );
     }
 
+    private JsonNode parseResponseBody(String responseBody) {
+        try {
+            return objectMapper.readTree(responseBody);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("La respuesta de Gemini no es JSON valido", exception);
+        }
+    }
+
     private List<String> parseStringArray(String responseText) {
         try {
             List<String> response = objectMapper.readValue(responseText, new TypeReference<>() {
@@ -168,5 +234,8 @@ public class AiClient {
             int totalTokenCount,
             long responseTimeMs
     ) {
+    }
+
+    private record AiRawResponse(String model, JsonNode response, long responseTimeMs) {
     }
 }
