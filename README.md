@@ -176,7 +176,7 @@ El `Deployment` expone el contenedor en el puerto `8084` y el `Service` redirige
 
 - `POST /v1/report/commits/insert-commit`: registra un commit en base de datos.
 - `GET /v1/report/commits/current-month/weeks`: consulta los commits de la ultima semana completa.
-- `POST /v1/report/commits/analysis/manual`: genera manualmente el analisis de commits por rango de fechas, envia correo y regresa metricas de IA.
+- `POST /v1/report/commits/analysis/manual`: genera manualmente el analisis de commits por rango de fechas, envia correo y regresa una respuesta compacta con el analisis y estado del envio.
 - `POST /v1/report/email/test`: envia un correo simple de prueba para validar la configuracion SMTP.
 - `GET /actuator/health`: health check provisto por Spring Boot Actuator.
 

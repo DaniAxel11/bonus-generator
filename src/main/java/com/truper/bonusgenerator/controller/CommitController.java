@@ -2,6 +2,7 @@ package com.truper.bonusgenerator.controller;
 
 import com.truper.bonusgenerator.model.dto.CommitDto;
 import com.truper.bonusgenerator.model.dto.request.CommitAnalysisRequest;
+import com.truper.bonusgenerator.model.dto.response.CommitAnalysisManualResponse;
 import com.truper.bonusgenerator.model.dto.response.CommitAnalysisResponse;
 import com.truper.bonusgenerator.model.dto.response.CommitMonthWeeksResponse;
 import com.truper.bonusgenerator.service.analysis.CommitAnalysisService;
@@ -51,7 +52,7 @@ public class CommitController {
             summary = "Genera reporte manual de commits",
             description = "Recibe un rango de fechas, consulta commits, genera analisis con IA y envia el resultado por correo"
     )
-    public ResponseEntity<CommitAnalysisResponse> generateManualCommitAnalysis(
+    public ResponseEntity<CommitAnalysisManualResponse> generateManualCommitAnalysis(
             @RequestBody CommitAnalysisRequest request
     ) {
         CommitAnalysisResponse response = commitAnalysisService.analyzeByDateRange(
@@ -59,7 +60,10 @@ public class CommitController {
                 request.getEndDate()
         );
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommitAnalysisManualResponse(
+                response.getAnalysis(),
+                response.isEmailSent()
+        ));
     }
 
     @PostMapping("/email/test")
