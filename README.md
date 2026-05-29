@@ -56,11 +56,31 @@ MAIL_SMTP_AUTH=true
 MAIL_SMTP_STARTTLS_ENABLE=true
 MAIL_SMTP_SSL_TRUST=smtp.gmail.com
 MAIL_DEBUG=false
+
+SECURITY_USERNAME=bonus-admin
+SECURITY_PASSWORD=change-me
 ```
 
 Para Docker local, el archivo de variables que se esta usando es `enviroment.env`.
 
 El cliente de IA usa Gemini API `generateContent`. La API key se envia como `x-goog-api-key: ${AI_API_KEY}` y el modelo se toma de `AI_MODEL`. Para proyectos nuevos se recomienda usar `gemini-2.5-flash` o `gemini-2.5-flash-lite`; si Gemini responde `429` para el modelo principal, la aplicacion intenta una vez con `AI_FALLBACK_MODEL`.
+
+## Seguridad
+
+Los endpoints bajo `/v1/report/**` estan protegidos con HTTP Basic Auth. Configura las credenciales en `enviroment.env`:
+
+```bash
+SECURITY_USERNAME=bonus-admin
+SECURITY_PASSWORD=change-me
+```
+
+Ejemplo de consumo:
+
+```bash
+curl -u bonus-admin:change-me http://localhost:8084/v1/report/commits/current-month/weeks
+```
+
+Se dejan publicos `GET /actuator/health`, Swagger UI y `/v3/api-docs/**`.
 
 ## Automatizacion
 

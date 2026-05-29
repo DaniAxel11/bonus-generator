@@ -47,6 +47,11 @@ jobs:
     cron: ${COMMIT_ANALYSIS_CRON:0 0 8 * * MON}
     zone: ${COMMIT_ANALYSIS_ZONE:America/Mexico_City}
 
+security:
+  basic:
+    username: ${SECURITY_USERNAME:dagonzalezm}
+    password: ${SECURITY_PASSWORD:admin123}
+
 mail:
   from: ${MAIL_FROM}
   to: ${MAIL_TO}
