@@ -82,6 +82,8 @@ curl -u bonus-admin:change-me http://localhost:8084/v1/report/commits/current-mo
 
 Se dejan publicos `GET /actuator/health`, Swagger UI y `/v3/api-docs/**`.
 
+En Swagger UI usa el boton `Authorize` y captura las credenciales de `SECURITY_USERNAME` y `SECURITY_PASSWORD` para probar los endpoints protegidos.
+
 ## Automatizacion
 
 La aplicacion incluye un scheduler de Spring que ejecuta el analisis automatico de commits cada lunes.
