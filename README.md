@@ -43,7 +43,7 @@ AI_FALLBACK_MODEL=gemini-2.5-flash-lite
 
 PORT=8084
 
-COMMIT_ANALYSIS_CRON=0 0 8 * * MON
+COMMIT_ANALYSIS_CRON=0 15 7 * * MON
 COMMIT_ANALYSIS_ZONE=America/Mexico_City
 
 MAIL_HOST=smtp.gmail.com
@@ -88,10 +88,10 @@ En Swagger UI usa el boton `Authorize` y captura las credenciales de `SECURITY_U
 
 La aplicacion incluye un scheduler de Spring que ejecuta el analisis automatico de commits cada lunes.
 
-Por defecto corre los lunes a las 08:00 en la zona `America/Mexico_City`:
+Por defecto corre los lunes a las 07:15 en la zona `America/Mexico_City`:
 
 ```bash
-COMMIT_ANALYSIS_CRON=0 0 8 * * MON
+COMMIT_ANALYSIS_CRON=0 15 7 * * MON
 COMMIT_ANALYSIS_ZONE=America/Mexico_City
 ```
 

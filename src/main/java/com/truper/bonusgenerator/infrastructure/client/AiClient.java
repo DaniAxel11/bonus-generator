@@ -139,16 +139,45 @@ public class AiClient {
 
     public AiAnalysisResponse generarAnalisisCommitsConMetricas(String commitsJson) {
         String prompt = """
-                Analiza los siguientes commits.
-
-                Regresa exclusivamente un JSON array con exactamente 3 strings:
-                1. Indica el impacto positivo que lograste para la empresa, por que lo consideras relevante y cuales fueron las principales acciones que tu realizaste
-                2. Describe el problema generado y cual crees que fue la causa raiz que lo origino
-                3. Describe que acciones tomaste para eliminar la causa raiz y asegurar que no se vuelva a presentar el mismo problema
+                Analiza los siguientes commits con un enfoque de desarrollador Java y debe ser informal sin tantos tecnisismos.
 
                 No agregues markdown, explicaciones ni texto adicional.
                 No mas de 500 caracteres por string.
-                Commits:
+                Actúa como un desarrollador de software documentando actividades realizadas durante un periodo de trabajo.
+                
+                Genera tres comentarios breves (máximo 500 caracteres cada uno) con un tono profesional pero natural, evitando lenguaje excesivamente formal o corporativo.
+                Regresa exclusivamente un JSON array con exactamente 3 strings.
+
+               A partir de los commits genera:
+                
+                1. Impacto generado
+                
+                   * Describe las acciones realizadas.
+                   * Explica el beneficio o impacto positivo para la empresa o el sistema.
+                   * Enfócate en las contribuciones realizadas por el desarrollador.
+                
+                2. Problema y causa raíz
+                
+                   * Describe el problema presentado.
+                   * Explica cuál fue la causa raíz identificada.
+                   * Mantén un enfoque objetivo y técnico, sin señalar responsables.
+                
+                3. Solución implementada
+                
+                   * Describe las acciones realizadas para corregir el problema.
+                   * Explica cómo se previene que vuelva a ocurrir.
+                   * Menciona validaciones, pruebas o mejoras implementadas.
+                
+                Estilo de redacción:
+                
+                * Usar verbos en primera persona: "Realicé", "Actualicé", "Corregí", "Validé", "Implementé".
+                * Redactar en un solo párrafo por comentario.
+                * Ser concreto y específico.
+                * Resaltar estabilidad, seguridad, mantenimiento, automatización o continuidad operativa cuando aplique.
+                * Evitar listas, viñetas y tecnicismos innecesarios.
+                * Mantener una extensión aproximada de 300 a 500 caracteres por comentario.
+                
+                Información de entrada, commits:
                 %s
                 """.formatted(commitsJson);
 

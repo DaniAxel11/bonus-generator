@@ -51,7 +51,7 @@ public class CommitAnalysisServiceImpl implements CommitAnalysisService {
 
         String commitsJson = toJson(toAiPayload(commits));
         AiAnalysisResponse analysisResponse = aiClient.generarAnalisisCommitsConMetricas(commitsJson);
-        emailService.sendCommitAnalysis(analysisResponse);
+        emailService.sendCommitAnalysis(analysisResponse, startDate, endDate);
 
         return new CommitAnalysisResponse(
                 startDate,

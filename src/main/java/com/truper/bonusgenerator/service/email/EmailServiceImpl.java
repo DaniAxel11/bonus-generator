@@ -13,11 +13,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailServiceImpl implements EmailService {
+
+    private static final DateTimeFormatter REPORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final JavaMailSender mailSender;
 
@@ -28,7 +32,7 @@ public class EmailServiceImpl implements EmailService {
     private String to;
 
     @Override
-    public void sendCommitAnalysis(AiAnalysisResponse response) {
+    public void sendCommitAnalysis(AiAnalysisResponse response, LocalDate startDate, LocalDate endDate) {
         validateMailConfig();
 
         try {
@@ -41,7 +45,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setFrom(from);
             helper.setTo(to);
             helper.setSubject("Analisis semanal de commits");
-            helper.setText(buildHtmlBody(response), true);
+            helper.setText(buildHtmlBody(response, startDate, endDate), true);
 
             log.info("Enviando correo de analisis de commits. from={}, to={}", from, to);
             mailSender.send(message);
@@ -101,7 +105,7 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    private String buildHtmlBody(AiAnalysisResponse response) {
+    private String buildHtmlBody(AiAnalysisResponse response, LocalDate startDate, LocalDate endDate) {
         return """
                 <!doctype html>
                 <html lang="es">
@@ -114,6 +118,7 @@ public class EmailServiceImpl implements EmailService {
                             <td style="background:#1f2937; padding:24px 28px;">
                               <h1 style="margin:0; color:#ffffff; font-size:22px; line-height:1.3;">Analisis semanal de commits</h1>
                               <p style="margin:8px 0 0; color:#d1d5db; font-size:14px;">Reporte generado automaticamente por Bonus Generator</p>
+                              <p style="margin:10px 0 0; color:#f9fafb; font-size:14px; font-weight:bold;">Fecha del reporte: %s</p>
                             </td>
                           </tr>
                           %s
@@ -158,6 +163,7 @@ public class EmailServiceImpl implements EmailService {
                 </body>
                 </html>
                 """.formatted(
+                formatReportDate(startDate, endDate),
                 buildSection("#ecfdf5", "#047857", "Impacto positivo", response.analysis().get(0)),
                 buildSection("#fff7ed", "#c2410c", "Problema detectado", response.analysis().get(1)),
                 buildSection("#eff6ff", "#1d4ed8", "Acciones realizadas", response.analysis().get(2)),
@@ -165,6 +171,16 @@ public class EmailServiceImpl implements EmailService {
                 buildMetricRow("Tokens respuesta", response.usage().candidatesTokenCount()),
                 buildMetricRow("Tokens totales", response.usage().totalTokenCount()),
                 buildMetricRow("Tiempo respuesta", response.usage().responseTimeMs() + " ms")
+        );
+    }
+
+    private String formatReportDate(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            return "";
+        }
+        return "%s - %s".formatted(
+                startDate.format(REPORT_DATE_FORMATTER),
+                endDate.format(REPORT_DATE_FORMATTER)
         );
     }
 

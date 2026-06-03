@@ -44,7 +44,7 @@ ai:
 
 jobs:
   commit-analysis:
-    cron: ${COMMIT_ANALYSIS_CRON:0 0 8 * * MON}
+    cron: ${COMMIT_ANALYSIS_CRON:0 15 7 * * MON}
     zone: ${COMMIT_ANALYSIS_ZONE:America/Mexico_City}
 
 security:
