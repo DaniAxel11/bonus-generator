@@ -15,7 +15,6 @@ Servicio backend para registrar commits y preparar reportes relacionados con la 
 - MapStruct para mapeo entre entidades y DTOs
 - Maven como gestor de dependencias y herramienta de build
 - Docker para empaquetado de la aplicacion
-- Kubernetes para despliegue mediante manifiestos en `k8s/`
 
 ## Estructura principal
 
@@ -25,7 +24,6 @@ Servicio backend para registrar commits y preparar reportes relacionados con la 
 - `src/main/java/com/truper/bonusgenerator/model`: entidades, DTOs y mappers.
 - `src/main/java/com/truper/bonusgenerator/infrastructure`: configuracion e integraciones externas.
 - `src/main/resources/application.yaml`: configuracion de Spring Boot.
-- `k8s/`: manifiestos de Kubernetes.
 
 ## Configuracion
 
@@ -181,18 +179,6 @@ Ejecutarlo:
 cd ~/Documents/scripts/docker
 ./run-docker.sh
 ```
-
-## Kubernetes
-
-Los manifiestos se encuentran en `k8s/`:
-
-```bash
-kubectl apply -f k8s/
-```
-
-El deployment actual usa la imagen local `bonus-generator:1.0` con `imagePullPolicy: Never`.
-
-El `Deployment` expone el contenedor en el puerto `8084` y el `Service` redirige al mismo `targetPort`.
 
 ## Endpoints
 
