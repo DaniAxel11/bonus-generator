@@ -1,6 +1,7 @@
 package com.truper.bonusgenerator.infrastructure.exception;
 
 import com.truper.bonusgenerator.infrastructure.client.AiRateLimitException;
+import com.truper.bonusgenerator.infrastructure.kafka.KafkaPublishException;
 import com.truper.bonusgenerator.service.email.EmailSendException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,14 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException exception) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message", exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 
     @ExceptionHandler(AiRateLimitException.class)
     public ResponseEntity<Map<String, Object>> handleAiRateLimit(AiRateLimitException exception) {
@@ -36,6 +45,19 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("message", exception.getMessage());
         response.put("provider", "SMTP");
+
+        if (exception.getCause() != null && exception.getCause().getMessage() != null) {
+            response.put("detail", exception.getCause().getMessage());
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
+    }
+
+    @ExceptionHandler(KafkaPublishException.class)
+    public ResponseEntity<Map<String, Object>> handleKafkaPublish(KafkaPublishException exception) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message", exception.getMessage());
+        response.put("provider", "Kafka");
 
         if (exception.getCause() != null && exception.getCause().getMessage() != null) {
             response.put("detail", exception.getCause().getMessage());

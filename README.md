@@ -10,6 +10,7 @@ Servicio backend para registrar commits y preparar reportes relacionados con la 
 - Spring Data JPA e Hibernate para persistencia
 - PostgreSQL como base de datos
 - Spring WebFlux WebClient para integraciones HTTP externas
+- Spring Kafka para procesamiento asincrono de solicitudes de analisis
 - Springdoc OpenAPI / Swagger UI para documentacion de la API
 - Lombok para reducir codigo repetitivo en DTOs, servicios y entidades
 - MapStruct para mapeo entre entidades y DTOs
@@ -23,6 +24,8 @@ Servicio backend para registrar commits y preparar reportes relacionados con la 
 - `src/main/java/com/truper/bonusgenerator/repository`: repositorios JPA.
 - `src/main/java/com/truper/bonusgenerator/model`: entidades, DTOs y mappers.
 - `src/main/java/com/truper/bonusgenerator/infrastructure`: configuracion e integraciones externas.
+- `docs/bonus-generator-overview.md`: descripcion funcional y arquitectura del proyecto.
+- `docs/kafka.md`: guia paso a paso de la implementacion Kafka.
 - `src/main/resources/application.yaml`: configuracion de Spring Boot.
 
 ## Configuracion
@@ -54,6 +57,10 @@ MAIL_SMTP_AUTH=true
 MAIL_SMTP_STARTTLS_ENABLE=true
 MAIL_SMTP_SSL_TRUST=smtp.gmail.com
 MAIL_DEBUG=false
+
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+KAFKA_CONSUMER_GROUP_ID=bonus-generator
+KAFKA_TOPIC_COMMIT_ANALYSIS_REQUESTED=bonus.commit-analysis.requested
 
 SECURITY_USERNAME=bonus-admin
 SECURITY_PASSWORD=change-me
@@ -117,6 +124,37 @@ MAIL_SMTP_STARTTLS_ENABLE=true
 MAIL_SMTP_SSL_TRUST=smtp.gmail.com
 MAIL_DEBUG=false
 ```
+
+## Kafka
+
+La aplicacion incluye un flujo asincrono con Kafka para encolar solicitudes de analisis de commits.
+
+Documentacion completa:
+
+```text
+docs/kafka.md
+```
+
+Levantar Kafka local:
+
+```bash
+docker compose -f docker-compose.kafka.yml up -d
+```
+
+Si Docker responde `unknown shorthand flag: 'f' in -f`, falta instalar el plugin de Docker Compose. En Ubuntu/WSL normalmente se instala con:
+
+```bash
+sudo apt update
+sudo apt install docker-compose-v2
+```
+
+Endpoint asincrono:
+
+```text
+POST /v1/report/commits/analysis/async
+```
+
+Este endpoint publica un evento en el topico `bonus.commit-analysis.requested` y responde `202 Accepted`. El consumer procesa el evento en segundo plano reutilizando el servicio existente de analisis, IA y correo.
 
 ## Ejecucion local
 
@@ -185,6 +223,7 @@ cd ~/Documents/scripts/docker
 - `POST /v1/report/commits/insert-commit`: registra un commit en base de datos.
 - `GET /v1/report/commits/current-month/weeks`: consulta los commits de la ultima semana completa.
 - `POST /v1/report/commits/analysis/manual`: genera manualmente el analisis de commits por rango de fechas, envia correo y regresa una respuesta compacta con el analisis y estado del envio.
+- `POST /v1/report/commits/analysis/async`: encola en Kafka el analisis de commits por rango de fechas y responde `202 Accepted`.
 - `POST /v1/report/email/test`: envia un correo simple de prueba para validar la configuracion SMTP.
 - `GET /actuator/health`: health check provisto por Spring Boot Actuator.
 

@@ -1,8 +1,11 @@
 package com.truper.bonusgenerator.controller;
 
+import com.truper.bonusgenerator.infrastructure.kafka.event.CommitAnalysisRequestedEvent;
+import com.truper.bonusgenerator.infrastructure.kafka.producer.CommitAnalysisEventProducer;
 import com.truper.bonusgenerator.model.dto.CommitDto;
 import com.truper.bonusgenerator.model.dto.request.CommitAnalysisRequest;
 import com.truper.bonusgenerator.model.dto.response.CommitAnalysisManualResponse;
+import com.truper.bonusgenerator.model.dto.response.CommitAnalysisQueuedResponse;
 import com.truper.bonusgenerator.model.dto.response.CommitAnalysisResponse;
 import com.truper.bonusgenerator.model.dto.response.CommitMonthWeeksResponse;
 import com.truper.bonusgenerator.service.analysis.CommitAnalysisService;
@@ -12,6 +15,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,6 +33,10 @@ public class CommitController {
     private final CommitService commitService;
     private final CommitAnalysisService commitAnalysisService;
     private final EmailService emailService;
+    private final CommitAnalysisEventProducer commitAnalysisEventProducer;
+
+    @Value("${app.kafka.topics.commit-analysis-requested}")
+    private String commitAnalysisRequestedTopic;
 
     @PostMapping("/commits/insert-commit")
     @Operation(
@@ -68,6 +76,30 @@ public class CommitController {
         ));
     }
 
+    @PostMapping("/commits/analysis/async")
+    @Operation(
+            summary = "Encola reporte manual de commits en Kafka",
+            description = "Recibe un rango de fechas, publica un evento en Kafka y procesa el analisis en segundo plano"
+    )
+    public ResponseEntity<CommitAnalysisQueuedResponse> queueManualCommitAnalysis(
+            @RequestBody CommitAnalysisRequest request
+    ) {
+        validateAnalysisRequest(request);
+
+        commitAnalysisEventProducer.publishCommitAnalysisRequested(new CommitAnalysisRequestedEvent(
+                request.getStartDate(),
+                request.getEndDate(),
+                "manual-api"
+        ));
+
+        return ResponseEntity.accepted().body(new CommitAnalysisQueuedResponse(
+                request.getStartDate(),
+                request.getEndDate(),
+                commitAnalysisRequestedTopic,
+                "queued"
+        ));
+    }
+
     @PostMapping("/email/test")
     @Operation(
             summary = "Envia correo de prueba",
@@ -76,5 +108,14 @@ public class CommitController {
     public ResponseEntity<String> sendTestEmail() {
         emailService.sendTestEmail();
         return ResponseEntity.ok("Correo de prueba enviado correctamente");
+    }
+
+    private void validateAnalysisRequest(CommitAnalysisRequest request) {
+        if (request == null || request.getStartDate() == null || request.getEndDate() == null) {
+            throw new IllegalArgumentException("startDate y endDate son obligatorios");
+        }
+        if (request.getStartDate().isAfter(request.getEndDate())) {
+            throw new IllegalArgumentException("startDate no puede ser mayor que endDate");
+        }
     }
 }
