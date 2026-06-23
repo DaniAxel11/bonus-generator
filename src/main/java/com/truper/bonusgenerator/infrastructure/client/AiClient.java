@@ -151,19 +151,14 @@ public class AiClient {
                A partir de los commits genera:
                 
                 1. Impacto generado
-                
                    * Describe las acciones realizadas.
                    * Explica el beneficio o impacto positivo para la empresa o el sistema.
                    * Enfócate en las contribuciones realizadas por el desarrollador.
-                
                 2. Problema y causa raíz
-                
                    * Describe el problema presentado.
                    * Explica cuál fue la causa raíz identificada.
                    * Mantén un enfoque objetivo y técnico, sin señalar responsables.
-                
-                3. Solución implementada
-                
+                3. Solución implementada 
                    * Describe las acciones realizadas para corregir el problema.
                    * Explica cómo se previene que vuelva a ocurrir.
                    * Menciona validaciones, pruebas o mejoras implementadas.
